@@ -2,14 +2,14 @@
   'use strict';
 
   const COPY_SEQUENCE = Object.freeze([
-    '在这里',
     '它注意到你了',
+    '在下方放入你的眼睛',
   ]);
 
   const PHASE_COPY = Object.freeze({
     contact: COPY_SEQUENCE[0],
     near: COPY_SEQUENCE[0],
-    noticed: COPY_SEQUENCE[1],
+    noticed: COPY_SEQUENCE[0],
     aligned: COPY_SEQUENCE[1],
   });
 
@@ -228,7 +228,10 @@
       }
 
       if (this.phase === 'aligned') {
-        const countdownReady = true;
+        const countdownReadyAt = this.guideReadableAt
+          + this.timing.alignedReadMs
+          + this.timing.alignedExitMs;
+        const countdownReady = now >= countdownReadyAt;
         const holdDelta = countdownReady && core && active
           ? deltaMs / this.timing.holdMs
           : -deltaMs / this.timing.holdReleaseMs;
@@ -303,7 +306,8 @@
         )
         : isFinalSequence ? 1 : 0;
       const finalGuideComplete = isFinalSequence && guideExit >= 1;
-      const countdownReady = this.phase === 'aligned';
+      const countdownReady = this.phase === 'aligned'
+        && guideReadableFor >= this.timing.alignedReadMs + this.timing.alignedExitMs;
       const countdownValue = this.phase === 'entering' || this.phase === 'handoff'
         ? 0
         : this.hold > 0
