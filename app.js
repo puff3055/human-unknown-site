@@ -30,6 +30,9 @@
   const soundscape = window.LivingSoundscape && soundToggle
     ? new window.LivingSoundscape(soundToggle)
     : null;
+  const lightCursor = window.HumanUnknownLightCursor && contactCursor
+    ? new window.HumanUnknownLightCursor(contactCursor, { reducedMotion: reduceMotion })
+    : null;
 
   const pointer = {
     x: window.innerWidth / 2,
@@ -316,6 +319,20 @@
       && target.closest
       && target.closest('#soundToggle')
     );
+  }
+
+  function isPointerOverSoundControl() {
+    if (
+      !soundToggle
+      || soundToggle.disabled
+      || !pointer.inside
+      || contact.dataset.intro === 'blackout'
+    ) return false;
+    const bounds = soundToggle.getBoundingClientRect();
+    return pointer.x >= bounds.left
+      && pointer.x <= bounds.right
+      && pointer.y >= bounds.top
+      && pointer.y <= bounds.bottom;
   }
 
   function isTrackingPhase(value = phase) {
@@ -860,11 +877,18 @@
 
     if (pointerType !== 'touch') {
       contact.classList.add('has-pointer');
-      contactCursor.style.transform = `translate3d(${clientX}px, ${clientY}px, 0)`;
+      if (lightCursor) {
+        lightCursor.moveTo(clientX, clientY);
+      } else if (contactCursor) {
+        contactCursor.style.transform = `translate3d(${clientX}px, ${clientY}px, 0)`;
+      }
     }
   }
 
   window.addEventListener('pointermove', (event) => {
+    if (lightCursor) {
+      lightCursor.setHoverTarget(isSoundTarget(event.target) ? 'sound' : 'none');
+    }
     updatePointer(
       event.clientX,
       event.clientY,
@@ -875,6 +899,10 @@
   }, { passive: true });
 
   window.addEventListener('pointerdown', (event) => {
+    if (lightCursor && event.pointerType !== 'touch') {
+      lightCursor.setPressed(true);
+      lightCursor.setHoverTarget(isSoundTarget(event.target) ? 'sound' : 'none');
+    }
     if (isSoundTarget(event.target)) return;
     if (event.pointerType === 'touch' || event.pointerType === 'pen') {
       interaction.touchActive = true;
@@ -889,12 +917,14 @@
   }, { passive: true });
 
   window.addEventListener('pointerup', (event) => {
+    if (lightCursor) lightCursor.setPressed(false);
     if (event.pointerType === 'touch' || event.pointerType === 'pen') {
       interaction.touchActive = false;
     }
   }, { passive: true });
 
   window.addEventListener('pointercancel', (event) => {
+    if (lightCursor) lightCursor.setPressed(false);
     if (event.pointerType === 'touch' || event.pointerType === 'pen') {
       interaction.touchActive = false;
       pointer.inside = false;
@@ -934,6 +964,10 @@
     pointer.inside = false;
     presence.targetStudy = 0;
     contact.classList.remove('has-pointer');
+    if (lightCursor) {
+      lightCursor.setPressed(false);
+      lightCursor.setHoverTarget('none');
+    }
   });
 
   document.documentElement.addEventListener('mouseenter', () => {
@@ -949,6 +983,10 @@
     interaction.touchActive = false;
     interaction.keyboardActive = false;
     contact.classList.remove('has-pointer');
+    if (lightCursor) {
+      lightCursor.setPressed(false);
+      lightCursor.setHoverTarget('none');
+    }
   });
 
   window.addEventListener('focus', () => {
@@ -1185,6 +1223,28 @@
     );
   }
 
+  function updateLightCursor(deltaSeconds) {
+    if (!lightCursor) return;
+
+    lightCursor.setHoverTarget(isPointerOverSoundControl() ? 'sound' : 'none');
+
+    const lockedPupilX = phase === 'entering' || phase === 'handoff'
+      ? entryOriginX
+      : gaze.x;
+    const lockedPupilY = phase === 'entering' || phase === 'handoff'
+      ? entryOriginY
+      : gaze.y;
+
+    lightCursor.update(deltaSeconds, {
+      pointer,
+      centralTarget: interaction.outer && isTrackingPhase(phase),
+      phase,
+      entry: encounterState.entry,
+      pupilX: window.innerWidth / 2 + lockedPupilX,
+      pupilY: window.innerHeight / 2 + lockedPupilY,
+    });
+  }
+
   function updateMetabolism(now) {
     if (reduceMotion) {
       metabolism.lifeA.fill(0);
@@ -1379,6 +1439,7 @@
         active: getContactIsActive(),
       }), now);
     }
+    updateLightCursor(deltaSeconds);
     updateCuriosity(deltaSeconds, now);
     updateMetabolism(now);
     updateWaves(now);
@@ -1546,15 +1607,19 @@
         hotzone: interaction.core ? 'core' : interaction.outer ? 'outer' : 'none',
         coreAmount: interaction.coreAmount,
       },
+      cursor: lightCursor ? lightCursor.getState() : null,
       pointerTravel: pointer.travel,
       firstContactAt,
       sound: soundscape ? soundscape.getState() : null,
       contract: {
-        version: '4.2',
+        version: '4.3',
         phaseAttribute: 'data-phase',
         introAttribute: 'data-intro',
         countdownAttribute: 'data-countdown',
         countdownValueAttribute: 'data-countdown-value',
+        cursorModeAttribute: 'data-mode',
+        cursorTargetAttribute: 'data-target',
+        cursorModes: ['cloud', 'condensing', 'point', 'absorbing'],
         exitEvent: 'humanunknown:homepage-exit',
         cssVariables: [
           '--contact-proximity',
@@ -1581,5 +1646,6 @@
     window.clearTimeout(reducedFrameTimer);
     if (soundscape) soundscape.destroy();
     if (nebula) nebula.destroy();
+    if (lightCursor) lightCursor.destroy();
   });
 })();
