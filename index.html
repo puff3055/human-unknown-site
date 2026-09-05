@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="HUMAN UNKNOWN — 人类的世界，只是世界的一种解释。">
+  <title>HUMAN UNKNOWN</title>
+  <link rel="preload" as="image" href="assets/home-contact-background.png">
+  <link rel="stylesheet" href="style.css?v=4.2.0-rc.1">
+</head>
+<body>
+  <main
+    class="contact"
+    id="contact"
+    data-intro="blackout"
+    data-phase="opening"
+    data-life="resting"
+    data-input="none"
+    data-countdown="waiting"
+    data-countdown-value=""
+    data-exit-ready="false"
+    tabindex="0"
+    aria-describedby="contactInstructions guideText"
+  >
+    <div class="cosmos" id="cosmos" aria-hidden="true">
+      <canvas id="nebulaCanvas"></canvas>
+      <img
+        class="nebula-fallback"
+        id="nebulaFallback"
+        src="assets/home-contact-background.png"
+        alt=""
+        width="1672"
+        height="941"
+        draggable="false"
+      >
+    </div>
+
+    <button
+      class="sound-toggle"
+      id="soundToggle"
+      type="button"
+      aria-label="轻触开启声音"
+      aria-pressed="true"
+      data-sound-state="armed"
+    >
+      <img
+        id="soundIcon"
+        src="assets/tabler-volume.svg"
+        alt=""
+        width="24"
+        height="24"
+        draggable="false"
+      >
+    </button>
+    <span class="sound-prompt is-visible" id="soundPrompt" aria-hidden="true">轻触开启声音</span>
+    <span class="visually-hidden" id="soundStatus" aria-live="polite">声音等待触碰开启</span>
+    <span class="visually-hidden" id="contactInstructions">
+      跟随文字靠近中央。“放入你的眼睛”结束后，在瞳孔内连续停留三秒完成接触。使用键盘时，按住回车键或空格键。
+    </span>
+
+    <header class="identity" aria-label="HUMAN UNKNOWN">
+      <h1>HUMAN UNKNOWN</h1>
+      <p>人类的世界，只是世界的一种解释。</p>
+    </header>
+
+    <div class="guide" aria-live="polite" aria-atomic="true">
+      <p id="guideText"></p>
+    </div>
+
+    <div class="gaze-countdown" id="gazeCountdown" aria-live="polite" aria-atomic="true" aria-hidden="true">
+      <span id="countdownNumber"></span>
+    </div>
+
+    <div class="contact-cursor" id="contactCursor" aria-hidden="true">
+      <span></span>
+    </div>
+  </main>
+
+  <noscript>请启用 JavaScript，完成这次接触。</noscript>
+  <script src="encounter-machine.js?v=4.2.0-rc.1"></script>
+  <script src="living-nebula.js?v=4.2.0-rc.1"></script>
+  <script src="living-soundscape.js?v=4.2.0-rc.1"></script>
+  <script src="app.js?v=4.2.0-rc.1"></script>
+</body>
+</html>
