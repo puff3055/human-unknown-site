@@ -17,6 +17,7 @@
   --contact-entry: 0;
   --hotzone-cue: 0;
   --hotzone-scale: .96;
+  --hotzone-y: -11vh;
   --pupil-x: 0px;
   --pupil-y: 0px;
 }
@@ -100,7 +101,7 @@ body {
   position: absolute;
   z-index: 2;
   left: calc(50% + var(--pupil-x));
-  top: calc(50% + var(--pupil-y));
+  top: calc(50% + var(--pupil-y) + var(--hotzone-y));
   width: clamp(230px, 32vmin, 430px);
   aspect-ratio: 1;
   border-radius: 46% 54% 51% 49% / 53% 47% 55% 45%;
@@ -144,6 +145,7 @@ body {
     filter .72s ease;
   pointer-events: none;
   will-change: opacity, transform;
+  display: none;
 }
 
 .cosmos canvas {
@@ -336,7 +338,7 @@ body {
   position: absolute;
   z-index: 3;
   left: 50%;
-  top: 34.5vh;
+  top: 27.5vh;
   width: min(72vw, 640px);
   opacity: var(--guide-exit-opacity);
   transform:
@@ -373,11 +375,51 @@ body {
   transform: translateY(0);
 }
 
+.entry-control {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 34vh;
+  min-width: 190px;
+  padding: 13px 24px;
+  border: 1px solid rgba(var(--paper) / .38);
+  border-radius: 2px;
+  background: rgba(var(--paper) / .07);
+  color: rgba(var(--paper) / .78);
+  font: 300 12px/1.4 "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  letter-spacing: .22em;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 7px);
+  transition: opacity .55s ease, transform .65s ease, background-color .3s ease;
+  pointer-events: none;
+  cursor: none;
+  touch-action: none;
+}
+
+.contact[data-phase="aligned"] .entry-control {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.entry-control:hover,
+.entry-control:focus-visible,
+.entry-control.is-holding {
+  border-color: rgba(var(--paper) / .68);
+  background: rgba(var(--paper) / calc(.09 + var(--contact-hold) * .16));
+  outline: none;
+}
+
+.contact[data-phase="aligned"] .guide {
+  opacity: 0;
+}
+
 .gaze-countdown {
   position: absolute;
   z-index: 4;
   left: calc(50% + var(--pupil-x));
-  top: calc(50% + var(--pupil-y) + clamp(92px, 16vmin, 156px));
+  top: calc(50% + var(--pupil-y) + var(--hotzone-y) + clamp(92px, 16vmin, 156px));
   width: 3em;
   color: rgba(var(--paper) / .76);
   font-family: "Helvetica Neue", Arial, sans-serif;
@@ -588,8 +630,17 @@ noscript {
   }
 
   .guide {
-    top: 31.5vh;
+    top: 25.5vh;
     width: 88vw;
+  }
+
+  .entry-control {
+    top: 32.5vh;
+    min-width: 180px;
+  }
+
+  :root {
+    --hotzone-y: -9vh;
   }
 
   .guide p {
@@ -597,7 +648,7 @@ noscript {
   }
 
   .gaze-countdown {
-    top: calc(50% + var(--pupil-y) + 94px);
+    top: calc(50% + var(--pupil-y) + var(--hotzone-y) + 94px);
     font-size: 22px;
   }
 

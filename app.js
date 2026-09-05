@@ -16,6 +16,7 @@
   const guideText = document.getElementById('guideText');
   const gazeCountdown = document.getElementById('gazeCountdown');
   const countdownNumber = document.getElementById('countdownNumber');
+  const entryControl = document.getElementById('entryControl');
   const contactCursor = document.getElementById('contactCursor');
   const soundToggle = document.getElementById('soundToggle');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -33,6 +34,8 @@
   const lightCursor = window.HumanUnknownLightCursor && contactCursor
     ? new window.HumanUnknownLightCursor(contactCursor, { reducedMotion: reduceMotion })
     : null;
+
+  const formatGuide = (copy) => `“${copy}”`;
 
   const pointer = {
     x: window.innerWidth / 2,
@@ -66,6 +69,7 @@
     intentional: false,
     touchActive: false,
     keyboardActive: false,
+    entryActive: false,
     outer: false,
     core: false,
     coreAmount: 0,
@@ -294,11 +298,12 @@
   }
 
   function setGuide(copy) {
-    if (guideText.textContent === copy || pendingGuide === copy) return;
+    const displayCopy = formatGuide(copy);
+    if (guideText.textContent === displayCopy || pendingGuide === copy) return;
     window.clearTimeout(guideSwapTimer);
 
     if (!guideText.textContent) {
-      guideText.textContent = copy;
+      guideText.textContent = displayCopy;
       pendingGuide = '';
       requestAnimationFrame(() => guideText.classList.add('is-visible'));
       return;
@@ -307,7 +312,7 @@
     pendingGuide = copy;
     guideText.classList.remove('is-visible');
     guideSwapTimer = window.setTimeout(() => {
-      guideText.textContent = copy;
+      guideText.textContent = displayCopy;
       guideText.classList.add('is-visible');
       pendingGuide = '';
     }, guideSwapDelay);
@@ -319,6 +324,15 @@
       && target.closest
       && target.closest('#soundToggle')
     );
+  }
+
+  function isEntryTarget(target) {
+    return Boolean(target && target.closest && target.closest('#entryControl'));
+  }
+
+  function setEntryActive(active) {
+    interaction.entryActive = Boolean(active && phase === 'aligned');
+    entryControl?.classList.toggle('is-holding', interaction.entryActive);
   }
 
   function isPointerOverSoundControl() {
@@ -441,7 +455,7 @@
     contact.style.setProperty('--pupil-x', `${pupilOriginX.toFixed(2)}px`);
     contact.style.setProperty('--pupil-y', `${pupilOriginY.toFixed(2)}px`);
 
-    if (nextState.guide && guideText.textContent !== nextState.guide) {
+    if (nextState.guide && guideText.textContent !== formatGuide(nextState.guide)) {
       setGuide(nextState.guide);
     }
 
@@ -904,6 +918,10 @@
       lightCursor.setHoverTarget(isSoundTarget(event.target) ? 'sound' : 'none');
     }
     if (isSoundTarget(event.target)) return;
+    if (isEntryTarget(event.target)) {
+      setEntryActive(true);
+      entryControl.setPointerCapture?.(event.pointerId);
+    }
     if (event.pointerType === 'touch' || event.pointerType === 'pen') {
       interaction.touchActive = true;
     }
@@ -917,6 +935,7 @@
   }, { passive: true });
 
   window.addEventListener('pointerup', (event) => {
+    setEntryActive(false);
     if (lightCursor) lightCursor.setPressed(false);
     if (event.pointerType === 'touch' || event.pointerType === 'pen') {
       interaction.touchActive = false;
@@ -924,6 +943,7 @@
   }, { passive: true });
 
   window.addEventListener('pointercancel', (event) => {
+    setEntryActive(false);
     if (lightCursor) lightCursor.setPressed(false);
     if (event.pointerType === 'touch' || event.pointerType === 'pen') {
       interaction.touchActive = false;
@@ -941,6 +961,10 @@
     ) return;
     event.preventDefault();
     if (event.repeat) return;
+    if (isEntryTarget(event.target)) {
+      setEntryActive(true);
+      return;
+    }
     interaction.keyboardActive = true;
     pointer.x = window.innerWidth / 2 + gaze.x;
     pointer.y = window.innerHeight / 2 + gaze.y;
@@ -956,6 +980,7 @@
 
   document.addEventListener('keyup', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
+      setEntryActive(false);
       interaction.keyboardActive = false;
     }
   });
@@ -982,6 +1007,7 @@
     presence.targetStudy = 0;
     interaction.touchActive = false;
     interaction.keyboardActive = false;
+    setEntryActive(false);
     contact.classList.remove('has-pointer');
     if (lightCursor) {
       lightCursor.setPressed(false);
@@ -1116,7 +1142,8 @@
     const viewportCenterX = window.innerWidth / 2;
     const viewportCenterY = window.innerHeight / 2;
     const pupilX = viewportCenterX + gaze.x;
-    const pupilY = viewportCenterY + gaze.y;
+    const hotzoneOffsetY = window.innerHeight * (window.innerWidth <= 720 ? -0.09 : -0.11);
+    const pupilY = viewportCenterY + gaze.y + hotzoneOffsetY;
     const distance = Math.hypot(pointer.x - pupilX, pointer.y - pupilY);
     const shortSide = Math.min(window.innerWidth, window.innerHeight);
     const hasRealInput = pointer.hasMoved && pointer.inside && interaction.intentional;
@@ -1433,10 +1460,11 @@
     updateGaze(deltaSeconds);
     updateApproach(deltaSeconds, now);
     if (encounter) {
+      const usingEntryControl = phase === 'aligned';
       applyEncounterState(encounter.update(now, {
-        outer: interaction.outer,
-        core: interaction.core,
-        active: getContactIsActive(),
+        outer: interaction.intentional,
+        core: usingEntryControl ? interaction.entryActive : interaction.intentional,
+        active: usingEntryControl ? interaction.entryActive : interaction.intentional,
       }), now);
     }
     updateLightCursor(deltaSeconds);
@@ -1612,7 +1640,7 @@
       firstContactAt,
       sound: soundscape ? soundscape.getState() : null,
       contract: {
-        version: '4.3',
+        version: '4.4',
         phaseAttribute: 'data-phase',
         introAttribute: 'data-intro',
         countdownAttribute: 'data-countdown',
