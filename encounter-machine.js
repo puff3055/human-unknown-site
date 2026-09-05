@@ -3,7 +3,7 @@
 
   const COPY_SEQUENCE = Object.freeze([
     '它注意到你了',
-    '在下方放入你的眼睛',
+    '在中间放入你的眼睛',
   ]);
 
   const PHASE_COPY = Object.freeze({
