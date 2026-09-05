@@ -18,12 +18,13 @@
     revealMs: 3600,
     titleInMs: 1500,
     titleMinReadMs: 4000,
+    readyPauseMs: 3000,
     titleDissolveMs: 2400,
-    guideSwapMs: 400,
-    guideEnterMs: 500,
+    guideSwapMs: 1200,
+    guideEnterMs: 1200,
     contactReadMs: 1600,
     nearReadMs: 1600,
-    noticedReadMs: 2000,
+    noticedReadMs: 5000,
     alignedReadMs: 1800,
     alignedExitMs: 550,
     noticeDwellMs: 380,
@@ -42,8 +43,8 @@
     revealMs: 320,
     titleInMs: 120,
     titleDissolveMs: 80,
-    guideSwapMs: 80,
-    guideEnterMs: 80,
+    guideSwapMs: 1200,
+    guideEnterMs: 1200,
     alignedExitMs: 80,
     noticeDwellMs: 160,
     coreDwellMs: 180,
@@ -168,11 +169,11 @@
       else if (elapsed < titleEndedAt) this.intro = 'title-in';
       else this.intro = 'title-hold';
 
-      const hasReadTitle = now - this.titleFullyVisibleAt >= this.timing.titleMinReadMs;
-      if (this.intentionalAt !== null && hasReadTitle) {
+      const readyForNarration = now - this.titleFullyVisibleAt >= this.timing.readyPauseMs;
+      if (readyForNarration) {
         this.dissolveStartedAt = now;
         this.intro = 'dissolving';
-        this.transition('contact', now);
+        this.transition('noticed', now);
       }
     }
 
@@ -210,27 +211,14 @@
       }
 
       if (this.phase === 'noticed') {
-        const canDwell = core && active;
-        this.coreDwell = clamp(
-          this.coreDwell + (canDwell ? deltaMs : -deltaMs * 0.62),
-          0,
-          this.timing.coreDwellMs
-        );
-        if (
-          canDwell
-          &&
-          readableFor >= this.timing.noticedReadMs
-          && this.coreDwell >= this.timing.coreDwellMs
-        ) {
+        if (readableFor >= this.timing.noticedReadMs) {
           this.transition('aligned', now);
         }
         return;
       }
 
       if (this.phase === 'aligned') {
-        const countdownReadyAt = this.guideReadableAt
-          + this.timing.alignedReadMs
-          + this.timing.alignedExitMs;
+        const countdownReadyAt = this.guideReadableAt;
         const countdownReady = now >= countdownReadyAt;
         const holdDelta = countdownReady && core && active
           ? deltaMs / this.timing.holdMs
@@ -297,17 +285,13 @@
         || this.phase === 'entering'
         || this.phase === 'handoff';
       const finalGuideReadComplete = isFinalSequence
-        && guideReadableFor >= this.timing.alignedReadMs;
-      const guideExit = this.phase === 'aligned'
-        ? smoothstep(
-          this.timing.alignedReadMs,
-          this.timing.alignedReadMs + this.timing.alignedExitMs,
-          guideReadableFor
-        )
-        : isFinalSequence ? 1 : 0;
-      const finalGuideComplete = isFinalSequence && guideExit >= 1;
+        && this.guideReadableAt !== null
+        && now >= this.guideReadableAt;
+      const guideExit = this.phase === 'handoff' ? 1 : 0;
+      const finalGuideComplete = finalGuideReadComplete;
       const countdownReady = this.phase === 'aligned'
-        && guideReadableFor >= this.timing.alignedReadMs + this.timing.alignedExitMs;
+        && this.guideReadableAt !== null
+        && now >= this.guideReadableAt;
       const countdownValue = this.phase === 'entering' || this.phase === 'handoff'
         ? 0
         : this.hold > 0

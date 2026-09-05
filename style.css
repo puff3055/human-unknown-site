@@ -366,8 +366,8 @@ body {
   opacity: 0;
   transform: translateY(6px);
   transition:
-    opacity .55s ease,
-    transform .65s cubic-bezier(.22, .61, .36, 1);
+    opacity 1.2s ease,
+    transform 1.2s cubic-bezier(.22, .61, .36, 1);
 }
 
 .guide p.is-visible {
