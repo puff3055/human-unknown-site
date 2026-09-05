@@ -18,7 +18,7 @@
     revealMs: 3600,
     titleInMs: 1500,
     titleMinReadMs: 4000,
-    readyPauseMs: 3000,
+    readyPauseMs: 5000,
     titleDissolveMs: 2400,
     guideSwapMs: 1200,
     guideEnterMs: 1200,
