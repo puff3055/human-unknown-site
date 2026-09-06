@@ -45,6 +45,8 @@
       // deliberate stored opt-out remains off.
       this.enabled = safeStoredPreference() !== 'off';
       this.activated = false;
+      this.sceneActive = true;
+      this.profile = 'home';
       this.context = null;
       this.nodes = null;
       this.levelData = null;
@@ -53,7 +55,6 @@
       this.seenMetabolism = new Set();
       this.suspendTimer = 0;
       this.visibilityTimer = 0;
-      this.pressureTimer = 0;
       this.promptTimer = 0;
       this.operationSerial = 0;
       this.telemetryFrame = 0;
@@ -63,6 +64,8 @@
       this.lastMetabolismAt = -Infinity;
       this.hoverEnteredAt = 0;
       this.hoverTriggered = false;
+      this.plantHoverEnteredAt = 0;
+      this.plantHoverTriggered = false;
       this.duckUntil = 0;
       this.diveTriggered = false;
       this.telemetry = {
@@ -76,6 +79,7 @@
         silence: 0,
         events: 0,
       };
+      this.mirrorControls = [];
 
       this.handleToggle = this.handleToggle.bind(this);
       this.handleKeydown = this.handleKeydown.bind(this);
@@ -223,7 +227,63 @@
         presenceUpperGain,
       };
       this.levelData = new Float32Array(analyser.fftSize);
-      this.schedulePressure();
+    }
+
+    registerMirror(toggle, status = null) {
+      if (!toggle || this.mirrorControls.some((control) => control.toggle === toggle)) return;
+      const click = async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (toggle.dataset.soundState === 'starting') return;
+        if (this.enabled && !this.activated) await this.setEnabled(true, false);
+        else await this.setEnabled(!this.enabled);
+      };
+      toggle.addEventListener('click', click);
+      this.mirrorControls.push({ toggle, status, click });
+      this.syncMirrorControl(toggle, status, this.toggle.dataset.soundState || (this.enabled ? 'armed' : 'off'));
+    }
+
+    syncMirrorControl(toggle, status, state) {
+      const icon = toggle.querySelector('img');
+      const visiblyOn = state === 'on' || state === 'starting' || state === 'armed';
+      const label = visiblyOn
+        ? state === 'armed' ? '轻触开启声音' : state === 'starting' ? '正在唤醒声音' : '关闭声音'
+        : state === 'unsupported' ? '当前浏览器不支持声音' : '开启声音';
+      toggle.dataset.soundState = state;
+      toggle.classList.toggle('is-on', visiblyOn);
+      toggle.setAttribute('aria-pressed', String(visiblyOn));
+      toggle.setAttribute('aria-busy', String(state === 'starting'));
+      toggle.setAttribute('aria-label', label);
+      toggle.title = label;
+      if (icon) icon.src = visiblyOn ? 'assets/tabler-volume.svg' : 'assets/tabler-volume-off.svg';
+      if (status) {
+        status.textContent = state === 'on'
+          ? '声音已开启'
+          : state === 'armed' ? '声音等待触碰开启' : '声音已关闭';
+      }
+    }
+
+    setProfile(profile) {
+      const nextProfile = profile === 'plant' ? 'plant' : 'home';
+      if (this.profile === nextProfile) return;
+      this.profile = nextProfile;
+      this.hoverEnteredAt = 0;
+      this.hoverTriggered = false;
+      this.plantHoverEnteredAt = 0;
+      this.plantHoverTriggered = false;
+      if (!this.context || !this.nodes) return;
+      const now = this.context.currentTime;
+      this.glide(this.nodes.movementGain.gain, 0, now, 0.12);
+      this.glide(this.nodes.presenceGain.gain, 0, now, 0.12);
+      this.glide(this.nodes.eventBus.gain, 0, now, 0.08);
+      this.glide(this.nodes.eventBus.gain, 0.78, now + 0.16, 0.20);
+    }
+
+    setSceneActive(active) {
+      this.sceneActive = Boolean(active);
+      if (!this.context || !this.nodes) return;
+      const now = this.context.currentTime;
+      this.glide(this.nodes.sceneBus.gain, this.sceneActive ? 1 : 0, now, this.sceneActive ? 0.24 : 0.12);
     }
 
     trackTimer(callback, delay) {
@@ -233,23 +293,6 @@
       }, delay);
       this.timers.add(timer);
       return timer;
-    }
-
-    schedulePressure() {
-      window.clearTimeout(this.pressureTimer);
-      this.pressureTimer = this.trackTimer(() => {
-        if (
-          this.enabled
-          && this.activated
-          && this.context
-          && this.context.state === 'running'
-          && this.lastPhase !== 'entering'
-          && this.lastPhase !== 'handoff'
-        ) {
-          this.triggerPressure(randomBetween(0.58, 0.88));
-        }
-        this.schedulePressure();
-      }, randomBetween(5000, 9000));
     }
 
     registerEvent(kind, durationMs, peak) {
@@ -269,7 +312,10 @@
     }
 
     createEventPair(options) {
-      if (!this.context || !this.nodes || this.context.state !== 'running') return;
+      if (!this.sceneActive || !this.context || !this.nodes || this.context.state !== 'running') return;
+      const eventNow = performance.now();
+      this.activeEvents = this.activeEvents.filter((event) => eventNow - event.startedAt < event.durationMs);
+      if (this.activeEvents.length >= 2) return;
       const audioNow = this.context.currentTime;
       const duration = options.duration;
       const panner = this.createPanner(clamp(options.pan || 0, -0.34, 0.34));
@@ -305,30 +351,12 @@
       this.registerEvent(options.kind, duration * 1000, options.lowLevel + options.upperLevel);
     }
 
-    triggerPressure(strength = 0.72) {
-      const amount = clamp(strength, 0.35, 1);
-      const base = randomBetween(36.5, 52.5);
-      const ratio = randomBetween(2.17, 2.39);
-      const duration = randomBetween(4.4, 6.3);
-      this.createEventPair({
-        kind: 'pressure', duration,
-        pan: randomBetween(-0.14, 0.14),
-        lowFrom: base, lowTo: base * randomBetween(0.94, 1.035),
-        upperFrom: base * ratio,
-        upperTo: base * (ratio + randomBetween(-0.055, 0.075)),
-        lowLevel: 0.018 * amount, upperLevel: 0.0055 * amount,
-        attack: randomBetween(1.0, 1.55),
-        releaseAt: randomBetween(2.2, 3.3),
-        release: randomBetween(0.75, 1.08),
-      });
-    }
-
     triggerEnableCue() {
       this.createEventPair({
         kind: 'enable', duration: 2.1, pan: 0,
         lowFrom: 43.8, lowTo: 47.1,
         upperFrom: 98.6, upperTo: 104.2,
-        lowLevel: 0.027, upperLevel: 0.007,
+        lowLevel: 0.015, upperLevel: 0.0035,
         attack: 0.18, releaseAt: 0.92, release: 0.48,
       });
     }
@@ -445,7 +473,7 @@
         const now = this.context.currentTime;
         this.nodes.master.gain.cancelScheduledValues(now);
         this.nodes.master.gain.setValueAtTime(this.nodes.master.gain.value, now);
-        this.nodes.master.gain.setTargetAtTime(0.90, now, 0.12);
+        this.nodes.master.gain.setTargetAtTime(0.52, now, 0.12);
         this.triggerEnableCue();
         this.setUiState('on');
         return true;
@@ -476,7 +504,10 @@
     async handleGesture(event) {
       if (!this.enabled || this.activated) return;
       if (this.toggle.dataset.soundState === 'starting') return;
-      if (this.toggle && this.toggle.contains(event.target)) return;
+      if (
+        (this.toggle && this.toggle.contains(event.target))
+        || this.mirrorControls.some((control) => control.toggle.contains(event.target))
+      ) return;
       await this.setEnabled(true, false);
     }
 
@@ -511,7 +542,7 @@
         this.ensureAudio().then((didStart) => {
           if (!didStart || !this.nodes || !this.enabled || document.hidden) return;
           const now = this.context.currentTime;
-          this.nodes.master.gain.setTargetAtTime(0.90, now, 0.38);
+          this.nodes.master.gain.setTargetAtTime(0.52, now, 0.38);
           this.setUiState('on');
         });
       }
@@ -556,6 +587,9 @@
           this.prompt.classList.toggle('is-visible', false);
         }
       }
+      this.mirrorControls.forEach((control) => {
+        this.syncMirrorControl(control.toggle, control.status, state);
+      });
     }
 
     updateEventTelemetry(now) {
@@ -577,6 +611,7 @@
     update(state) {
       if (!this.enabled || !this.activated || !this.context || !this.nodes) return;
       if (this.context.state !== 'running') return;
+      if (!this.sceneActive || this.profile !== 'home') return;
       const now = performance.now();
       if (now - this.lastControlAt < 42) return;
       this.lastControlAt = now;
@@ -604,20 +639,8 @@
       const entry = clamp(encounter.entry || 0, 0, 1);
       const boundarySilence = clamp(encounter.boundarySilence || 0, 0, 1);
       const baseFrequency = 43.5 + movement * 13.5 + (0.5 - vertical) * 3.2;
-      const presenceWave = clamp(
-        0.5
-          + Math.sin(now * 0.00039) * 0.34
-          + Math.sin(now * 0.00017 + 1.7) * 0.16,
-        0,
-        1
-      );
-      const presenceBreath = smoothstep(0.12, 0.90, presenceWave);
-      const presenceLevel = phase === 'handoff'
-        ? 0
-        : (0.006 + presenceBreath * 0.006)
-          * (1 - focus * 0.22)
-          * (1 - entry * 0.56)
-          * (1 - boundarySilence);
+      const presenceWave = 0;
+      const presenceLevel = 0;
 
       this.glide(
         this.nodes.presenceLow.frequency,
@@ -671,7 +694,6 @@
         this.diveTriggered = true;
         this.triggerDive();
       }
-      this.maybeTriggerMetabolism(state.metabolism && state.metabolism.events, now);
 
       const ducked = now < this.duckUntil;
       const audiblePresence = presenceLevel * (ducked ? 0.22 : 1);
@@ -710,6 +732,86 @@
       if (this.telemetryFrame % 8 === 0) this.updateTelemetry();
     }
 
+    updatePlant(state = {}) {
+      if (!this.enabled || !this.activated || !this.context || !this.nodes) return;
+      if (this.context.state !== 'running' || !this.sceneActive || this.profile !== 'plant') return;
+      const now = performance.now();
+      if (now - this.lastControlAt < 42) return;
+      this.lastControlAt = now;
+
+      const pointer = state.pointer || {};
+      const interaction = state.interaction || {};
+      const speed = Math.max(0, pointer.speed || 0);
+      const movement = clamp(1 - Math.exp(-speed / 460), 0, 1);
+      const hover = clamp(interaction.hover || 0, 0, 1);
+      const pan = clamp(
+        ((pointer.x || window.innerWidth / 2) / Math.max(1, window.innerWidth)) * 2 - 1,
+        -0.42,
+        0.42
+      );
+      const audioNow = this.context.currentTime;
+      const baseFrequency = 51 + movement * 17 + hover * 4;
+
+      this.glide(this.nodes.presenceGain.gain, 0, audioNow, 0.12);
+      this.glide(this.nodes.movementLow.frequency, baseFrequency, audioNow, 0.11);
+      this.glide(this.nodes.movementHarmonic.frequency, baseFrequency * 2.08, audioNow, 0.15);
+      this.glide(this.nodes.movementColor.frequency, baseFrequency * 1.43, audioNow, 0.14);
+      this.glide(this.nodes.movementFilter.frequency, 125 + movement * 120 + hover * 55, audioNow, 0.16);
+      this.glide(this.nodes.movementPanner.pan, pan * 0.62, audioNow, 0.12);
+      this.glide(
+        this.nodes.movementGain.gain,
+        movement * (0.006 + movement * 0.012) * (1 + hover * 0.16),
+        audioNow,
+        movement > 0.06 ? 0.11 : 0.64
+      );
+      this.glide(this.nodes.focusFilter.frequency, 410 - hover * 135, audioNow, 0.28);
+
+      if (interaction.hovering) {
+        if (!this.plantHoverEnteredAt) this.plantHoverEnteredAt = now;
+        if (!this.plantHoverTriggered && now - this.plantHoverEnteredAt >= 620) {
+          this.plantHoverTriggered = true;
+          this.createEventPair({
+            kind: 'plant-hover', duration: 2.3, pan: pan * 0.34,
+            lowFrom: 58, lowTo: 54,
+            upperFrom: 121, upperTo: 132,
+            lowLevel: 0.0072, upperLevel: 0.0018,
+            attack: 0.48, releaseAt: 0.96, release: 0.52,
+          });
+        }
+      } else {
+        this.plantHoverEnteredAt = 0;
+        this.plantHoverTriggered = false;
+      }
+
+      this.telemetry.presence = 0;
+      this.telemetry.movement = movement;
+      this.telemetry.focus = hover;
+      this.updateEventTelemetry(now);
+      this.telemetryFrame += 1;
+      if (this.telemetryFrame % 8 === 0) this.updateTelemetry();
+    }
+
+    triggerPlantPulse(kind = 'signal', strength = 0.7, pan = 0) {
+      if (this.profile !== 'plant') return;
+      const amount = clamp(strength, 0.25, 1);
+      const root = kind === 'root';
+      const flow = kind === 'flow';
+      this.createEventPair({
+        kind: `plant-${kind}`,
+        duration: 1.55,
+        pan: clamp(pan, -0.42, 0.42),
+        lowFrom: root ? 54 : flow ? 66 : 74,
+        lowTo: root ? 47 : flow ? 82 : 96,
+        upperFrom: root ? 108 : flow ? 136 : 151,
+        upperTo: root ? 96 : flow ? 166 : 188,
+        lowLevel: 0.0085 * amount,
+        upperLevel: 0.0022 * amount,
+        attack: 0.07,
+        releaseAt: 0.32,
+        release: 0.34,
+      });
+    }
+
     updateTelemetry() {
       if (!this.nodes || !this.levelData || !this.toggle) return;
       this.nodes.analyser.getFloatTimeDomainData(this.levelData);
@@ -739,7 +841,9 @@
         activated: this.activated,
         contextState: this.context ? this.context.state : 'uninitialized',
         uiState: this.toggle ? this.toggle.dataset.soundState : 'missing',
-        architecture: 'sparse-low-frequency-presence',
+        architecture: 'interaction-led-shared-bus',
+        profile: this.profile,
+        sceneActive: this.sceneActive,
         telemetry: { ...this.telemetry },
       };
     }
@@ -747,11 +851,14 @@
     destroy() {
       window.clearTimeout(this.suspendTimer);
       window.clearTimeout(this.visibilityTimer);
-      window.clearTimeout(this.pressureTimer);
       window.clearTimeout(this.promptTimer);
       this.timers.forEach((timer) => window.clearTimeout(timer));
       this.timers.clear();
       if (this.toggle) this.toggle.removeEventListener('click', this.handleToggle);
+      this.mirrorControls.forEach((control) => {
+        control.toggle.removeEventListener('click', control.click);
+      });
+      this.mirrorControls = [];
       document.removeEventListener('keydown', this.handleKeydown);
       document.removeEventListener('pointerdown', this.handleGesture, { capture: true });
       document.removeEventListener('visibilitychange', this.handleVisibility);

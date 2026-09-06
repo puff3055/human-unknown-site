@@ -5,11 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000000">
   <meta name="description" content="HUMAN UNKNOWN — 人类的世界，只是世界的一种解释。">
+  <link rel="icon" href="data:,">
   <title>HUMAN UNKNOWN</title>
   <link rel="preload" as="image" href="assets/home-contact-background.png">
   <link rel="preload" as="image" href="assets/cursor-light-cloud.png">
   <link rel="preload" as="image" href="assets/cursor-light-point.png">
-  <link rel="stylesheet" href="style.css?v=4.5.3-rc.1">
+  <link rel="preload" as="image" href="assets/world1-update-2-background@2x.png">
+  <link rel="stylesheet" href="style.css?v=full-journey-0.1.0-rc.1">
+  <link rel="stylesheet" href="green-body-realtime.css?v=full-journey-0.1.0-rc.1">
+  <link rel="stylesheet" href="journey-transition.css?v=full-journey-0.1.0-rc.1">
 </head>
 <body>
   <main
@@ -58,7 +62,7 @@
     <span class="sound-prompt is-visible" id="soundPrompt" aria-hidden="true">轻触开启声音</span>
     <span class="visually-hidden" id="soundStatus" aria-live="polite">声音等待触碰开启</span>
     <span class="visually-hidden" id="contactInstructions">
-      跟随文字靠近中央。“在中间放入你的眼睛”出现后，在瞳孔内连续停留三秒完成接触。使用键盘时，按住回车键或空格键。
+      按照页面文字移动光标。当“来中间，进入它的世界”完整显示后，在中央瞳孔内连续停留三秒完成接触。
     </span>
 
     <header class="identity" aria-label="HUMAN UNKNOWN">
@@ -120,11 +124,116 @@
     </div>
   </main>
 
+  <section
+    class="world-one"
+    id="worldOne"
+    data-active="false"
+    data-entry="idle"
+    data-phase="prepared"
+    data-chapter-stage="hidden"
+    aria-label="CHAPTER 01 / THE GREEN BODY｜群体生命"
+    aria-hidden="true"
+    tabindex="-1"
+    hidden
+  >
+    <canvas class="world-one__living" id="greenBodyLivingCanvas" aria-hidden="true"></canvas>
+    <canvas class="world-one__canvas" id="greenBodyCanvas" aria-hidden="true"></canvas>
+    <div class="world-one__vignette" aria-hidden="true"></div>
+    <header class="world-one__chrome">
+      <button id="worldReturn" type="button">HUMAN UNKNOWN</button>
+      <span>PLANT</span>
+    </header>
+    <button
+      class="sound-toggle world-one__sound-toggle"
+      id="worldSoundToggle"
+      type="button"
+      aria-label="轻触开启声音"
+      aria-pressed="true"
+      data-sound-state="armed"
+      data-sound-control="global"
+    >
+      <img src="assets/tabler-volume.svg" alt="" width="24" height="24" draggable="false">
+    </button>
+    <span class="visually-hidden" id="worldSoundStatus" aria-live="polite">声音等待触碰开启</span>
+    <div class="world-one__copy" id="worldCopy" aria-live="polite">
+      <div class="world-one__beat" data-beat="chapter">
+        <small>CHAPTER 01</small>
+        <h2>THE GREEN BODY</h2>
+        <p>群体生命</p>
+        <i></i>
+        <blockquote>“我”一定要有明确的边界吗？</blockquote>
+      </div>
+      <div class="world-one__beat world-one__beat--right" data-beat="here" data-copy-key="here"></div>
+      <div class="world-one__beat world-one__beat--right" data-beat="there" data-copy-key="there"></div>
+      <div class="world-one__beat world-one__beat--right" data-beat="collective" data-copy-key="collective"></div>
+      <div class="world-one__beat world-one__beat--right" data-beat="contrast" data-copy-key="contrast"></div>
+      <div class="world-one__beat world-one__beat--right" data-beat="question" data-copy-key="question"></div>
+      <div class="world-one__beat world-one__beat--right" data-beat="human" data-copy-key="human"></div>
+      <div class="world-one__beat world-one__beat--right" data-beat="final" data-copy-key="final"></div>
+    </div>
+    <div class="world-one__hint" id="worldHint">移动你的感知，看看哪里会注意到你。 <span>MOVE TO EXPLORE</span></div>
+    <button class="world-one__narrative-continue" id="worldNarrativeContinue" type="button" hidden>
+      <span>继续</span>
+      <small>CONTINUE</small>
+    </button>
+    <button class="world-one__source-trigger" id="worldSourcesToggle" type="button" aria-expanded="false" aria-controls="worldSourcesPanel" hidden>
+      <small>灵感来源 · 4 部作品</small>
+      <span>这次相遇，从哪里生长出来？</span>
+    </button>
+    <div class="world-one__source-scrim" id="worldSourcesScrim" hidden></div>
+    <aside class="world-one__sources" id="worldSourcesPanel" aria-label="本章灵感来源与推荐阅读" aria-hidden="true" hidden>
+      <header>
+        <small>CHAPTER 01 · INSPIRATION</small>
+        <h3>灵感来源与推荐阅读</h3>
+        <h4>这次相遇，从哪里生长出来？</h4>
+        <p>现实中的植物会感知、回应并传递信号；“同一个意识同时活在许多生命里”，是本章由此延伸的科幻想象。</p>
+        <button id="worldSourcesClose" type="button" aria-label="关闭灵感来源">关闭</button>
+      </header>
+      <div class="world-one__source-list" id="worldSourcesList"></div>
+      <footer>
+        <p>这些作品没有替你回答“我在哪里”。它们只是把这个问题带得更远。</p>
+        <div class="world-one__source-actions">
+          <button id="worldSourcesContinue" type="button">继续感知这个世界</button>
+          <button class="world-one__next" id="worldNext" type="button">
+            <span>进入尺度的未知</span>
+            <small>CHAPTER 02 · RECURSIVE COSMOS</small>
+          </button>
+        </div>
+      </footer>
+    </aside>
+    <div class="world-one__cursor" id="worldCursor" aria-hidden="true"><i></i></div>
+    <p class="visually-hidden" id="worldStatus" aria-live="polite" aria-atomic="true"></p>
+  </section>
+
+  <div
+    class="journey-bridge"
+    id="journeyBridge"
+    data-state="idle"
+    data-carrier-node="spore-center-low"
+    data-cut-count="0"
+    aria-hidden="true"
+  >
+    <p class="journey-bridge__copy" id="journeyBridgeCopy">
+      <span>你正在坠入</span>
+      <strong>一具更大的身体……</strong>
+      <small>YOU ARE FALLING INTO A LARGER BODY…</small>
+    </p>
+    <span class="journey-bridge__carrier" id="journeyCarrier">
+      <img src="assets/cursor-light-point.png" alt="" width="192" height="192" draggable="false">
+    </span>
+  </div>
+
   <noscript>请启用 JavaScript，完成这次接触。</noscript>
-  <script src="encounter-machine.js?v=4.5.3-rc.1"></script>
-  <script src="living-nebula.js?v=4.5.3-rc.1"></script>
-  <script src="living-soundscape.js?v=4.5.3-rc.1"></script>
-  <script src="light-cursor.js?v=4.5.3-rc.1"></script>
-  <script src="app.js?v=4.5.3-rc.1"></script>
+  <script src="encounter-machine.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="living-nebula.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="living-soundscape.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="light-cursor.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="world-one-soundscape.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="green-body-living.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="green-body-narrative.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="green-body-realtime.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="journey-transition.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="journey-controller.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="app.js?v=full-journey-0.1.0-rc.1"></script>
 </body>
 </html>

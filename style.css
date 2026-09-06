@@ -186,16 +186,14 @@ body {
   opacity: 0;
   filter: blur(9px) brightness(.62);
   transition:
-    opacity 1.5s cubic-bezier(.22, .61, .36, 1),
-    filter 1.65s cubic-bezier(.22, .61, .36, 1),
-    transform 1.65s cubic-bezier(.22, .61, .36, 1);
+    opacity 2s cubic-bezier(.22, .61, .36, 1),
+    filter 2s cubic-bezier(.22, .61, .36, 1),
+    transform 2s cubic-bezier(.22, .61, .36, 1);
   pointer-events: none;
 }
 
 .contact[data-intro="title-in"] .identity,
-.contact[data-intro="title-hold"] .identity,
-.contact[data-intro="dissolving"] .identity,
-.contact[data-intro="contact"] .identity {
+.contact[data-intro="title-hold"] .identity {
   opacity: 1;
   filter: blur(0) brightness(1);
   transform: translate(-50%, -50%) scale(1);
@@ -366,7 +364,7 @@ body {
   opacity: 0;
   transform: translateY(6px);
   transition:
-    opacity 1.2s ease,
+    opacity 3s ease,
     transform 1.2s cubic-bezier(.22, .61, .36, 1);
 }
 

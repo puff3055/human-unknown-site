@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#020208">
+  <meta name="description" content="HUMAN UNKNOWN — 每一声 hey，都会让一个新世界看见你。">
+  <title>HUMAN UNKNOWN — EYE MULTIVERSE</title>
+  <link rel="preload" as="image" href="assets/eye-orb-source-cutout.png">
+  <link rel="preload" as="image" href="assets/eye-multiverse-corridor-v1.png">
+  <link rel="stylesheet" href="eye-multiverse.css?v=0.9.0">
+  <link rel="stylesheet" href="journey-transition.css?v=full-journey-0.1.0-rc.1">
+</head>
+<body>
+  <main class="multiverse" id="multiverse" data-state="idle" data-input="pointer">
+    <canvas id="multiverseCanvas" class="multiverse__canvas" aria-hidden="true"></canvas>
+    <canvas id="phenomenaCanvas" class="multiverse__phenomena" aria-hidden="true"></canvas>
+    <div class="multiverse__veil" aria-hidden="true"></div>
+
+    <section class="chapter-intro" id="chapterIntro" aria-labelledby="chapterTitle">
+      <p class="chapter-intro__number">CHAPTER 03</p>
+      <h1 id="chapterTitle">EYE MULTIVERSE</h1>
+      <p class="chapter-intro__name">多重宇宙</p>
+      <p class="chapter-intro__question">如果每一种可能都继续存在，<br>哪一种才算现实？</p>
+      <button class="chapter-intro__enter" id="enterChapter" type="button">进入这一层现实</button>
+    </section>
+
+    <aside class="chapter-identity" id="chapterIdentity" aria-label="章节信息" aria-hidden="true">
+      <p>CHAPTER 03</p>
+      <strong>EYE MULTIVERSE</strong>
+      <span>多重宇宙</span>
+    </aside>
+
+    <section class="world-narrative" id="worldNarrative" aria-live="polite" aria-atomic="true" hidden>
+      <div class="world-narrative__copy">
+        <p class="world-narrative__eyebrow" id="narrativeEyebrow">THE FIRST BRANCH</p>
+        <p class="world-narrative__line" id="narrativeLine"></p>
+        <div class="world-narrative__source" id="narrativeSource"></div>
+      </div>
+    </section>
+
+    <header class="multiverse__header">
+      <p class="multiverse__brand"><i aria-hidden="true"></i>EYE MULTIVERSE</p>
+      <div class="multiverse__tools">
+        <div class="multiverse__counter" aria-live="polite" aria-label="已回应的新世界数量">
+          <span id="count">00</span>
+          <small>WORLDS ANSWERED</small>
+        </div>
+        <button class="multiverse__sound" id="soundButton" type="button" aria-pressed="true" aria-label="关闭声音">
+          <img id="soundIcon" src="assets/tabler-volume.svg" alt="">
+        </button>
+      </div>
+    </header>
+
+    <section class="multiverse__voice-dock" id="voicePanel" aria-label="语音交互">
+      <button class="multiverse__listen" id="listenButton" type="button" aria-label="开启麦克风">
+        <img id="microphoneIcon" src="assets/tabler-microphone.svg" alt="">
+        <span class="multiverse__listen-trace" aria-hidden="true"></span>
+      </button>
+      <div class="multiverse__voice-body">
+        <div class="multiverse__voice-copy" aria-live="polite" aria-atomic="true">
+          <span class="multiverse__voice-state" id="voiceState">让它们听见你</span>
+          <span class="multiverse__transcript" id="transcript">麦克风未开启</span>
+          <span class="multiverse__token" id="signalToken" aria-hidden="true">HEY · +1</span>
+        </div>
+        <canvas class="multiverse__wave" id="voiceWave" width="620" height="72" aria-hidden="true"></canvas>
+      </div>
+    </section>
+
+    <button class="traces-trigger" id="tracesTrigger" type="button" aria-controls="tracesDrawer" aria-expanded="false" hidden>
+      打开本章的思想余迹 <span aria-hidden="true">↗</span>
+    </button>
+
+    <aside class="traces-drawer" id="tracesDrawer" aria-labelledby="tracesTitle" aria-hidden="true">
+      <div class="traces-drawer__header">
+        <div>
+          <p>TRACES OF THOUGHT</p>
+          <h2 id="tracesTitle">这个世界从哪里生长出来？</h2>
+        </div>
+        <button class="traces-drawer__close" id="closeTraces" type="button" aria-label="关闭思想余迹">×</button>
+      </div>
+      <p class="traces-drawer__note">这些作品与刚才的体验共享相似问题；页面文案不是作品原句。</p>
+      <div class="traces-drawer__list">
+        <article class="trace-card">
+          <p>思想坐标 01 · 科幻设定</p>
+          <a href="https://www.penguinrandomhouse.com/books/224704/ficciones--fictions-by-jorge-luis-borges/9780307950925/" target="_blank" rel="noopener noreferrer">《小径分岔的花园》<span>The Garden of Forking Paths</span></a>
+          <small>豪尔赫·路易斯·博尔赫斯 · 小说</small>
+          <p>时间不是一条道路，而是一座不断分岔、让不同结果同时延续的花园。</p>
+        </article>
+        <article class="trace-card">
+          <p>思想坐标 02 · 科学解释</p>
+          <a href="https://journals.aps.org/rmp/abstract/10.1103/RevModPhys.29.454" target="_blank" rel="noopener noreferrer">《“相对态”量子力学表述》<span>“Relative State” Formulation</span></a>
+          <small>休·埃弗里特三世 · 科学论文</small>
+          <p>一种影响深远的量子力学解释路径；它不是平行宇宙已经被证实的证据。</p>
+        </article>
+        <article class="trace-card">
+          <p>思想坐标 03 · 科幻设定</p>
+          <a href="https://www.penguinrandomhouse.com/books/538034/exhalation-by-ted-chiang/9781101947906" target="_blank" rel="noopener noreferrer">《焦虑是自由引起的眩晕》<span>Anxiety Is the Dizziness of Freedom</span></a>
+          <small>特德·姜 · 收录于《呼气》</small>
+          <p>当人能够窥见其他可能中的自己，选择、责任与自由意志也随之改变。</p>
+        </article>
+        <article class="trace-card">
+          <p>思想坐标 04 · 思想寓言</p>
+          <a href="https://www.gutenberg.org/files/97/97-h/97-h.htm" target="_blank" rel="noopener noreferrer">《平面国》<span>Flatland</span></a>
+          <small>埃德温·A·艾勃特 · 小说</small>
+          <p>低维观察者看到的也许只是高维存在经过自己世界时留下的截面。</p>
+        </article>
+        <article class="trace-card">
+          <p>思想坐标 05 · 延伸推荐</p>
+          <a href="https://www.penguinrandomhouse.com/books/253400/dark-matter-by-blake-crouch/9781101904244/readers-guide/" target="_blank" rel="noopener noreferrer">《暗物质》<span>Dark Matter</span></a>
+          <small>布莱克·克劳奇 · 科幻小说</small>
+          <p>如果未曾选择的人生仍在别处继续，究竟是什么让一个人成为现在的自己？</p>
+        </article>
+        <article class="trace-card">
+          <p>思想坐标 06 · 延伸推荐</p>
+          <a href="https://a24films.com/films/everything-everywhere-all-at-once/" target="_blank" rel="noopener noreferrer">《瞬息全宇宙》<span>Everything Everywhere All at Once</span></a>
+          <small>丹·关、丹尼尔·施纳特 · 电影</small>
+          <p>当每一种人生都可能存在，意义也许不来自找到唯一正确的世界，而来自愿意回应眼前的人。</p>
+        </article>
+      </div>
+    </aside>
+    <button class="traces-backdrop" id="tracesBackdrop" type="button" aria-label="关闭思想余迹" tabindex="-1"></button>
+
+    <p class="visually-hidden" id="status" aria-live="assertive" aria-atomic="true"></p>
+  </main>
+  <noscript>请启用 JavaScript，让这个世界回应你。</noscript>
+  <script src="journey-transition.js?v=full-journey-0.1.0-rc.1"></script>
+  <script src="eye-multiverse.js?v=0.9.0"></script>
+</body>
+</html>

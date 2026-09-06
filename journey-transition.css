@@ -1,0 +1,155 @@
+:root {
+  --journey-ink: #010103;
+  --journey-paper: 240 240 233;
+  --journey-accent: 202 225 142;
+}
+
+.journey-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: rgb(var(--journey-paper));
+  background:
+    radial-gradient(circle at 50% 50%, rgba(var(--journey-accent) / .045), transparent 26%),
+    var(--journey-ink);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 900ms cubic-bezier(.2, .75, .2, 1), visibility 0s linear 900ms;
+}
+
+.journey-transition[data-kind="branch"] {
+  --journey-accent: 151 128 255;
+}
+
+.journey-transition[data-state="leaving"],
+.journey-transition[data-state="arriving"] {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.journey-transition[data-state="leaving"] {
+  pointer-events: auto;
+  cursor: wait;
+}
+
+.journey-transition__copy {
+  position: relative;
+  z-index: 2;
+  width: min(78vw, 760px);
+  margin: 0;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(9px);
+  transition:
+    opacity 1100ms cubic-bezier(.2, .7, .2, 1),
+    transform 1300ms cubic-bezier(.2, .7, .2, 1);
+}
+
+.journey-transition.is-copy-visible .journey-transition__copy {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.journey-transition.is-copy-gone .journey-transition__copy {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.journey-transition__copy span,
+.journey-transition__copy small {
+  display: block;
+  font: 400 9px/1.5 Arial, Helvetica, sans-serif;
+  letter-spacing: .34em;
+  color: rgba(var(--journey-paper) / .42);
+}
+
+.journey-transition__copy strong {
+  display: block;
+  margin: 20px 0 18px;
+  font: 300 clamp(25px, 2.15vw, 38px)/1.45 Georgia, "Songti SC", "STSong", serif;
+  letter-spacing: .13em;
+  color: rgba(var(--journey-paper) / .88);
+}
+
+.journey-transition__carrier {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.15);
+  background: rgba(var(--journey-paper) / .96);
+  box-shadow:
+    0 0 10px rgba(var(--journey-paper) / .8),
+    0 0 34px rgba(var(--journey-accent) / .5),
+    0 0 120px rgba(var(--journey-accent) / .22);
+}
+
+.journey-transition__carrier::before,
+.journey-transition__carrier::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  border: 1px solid rgba(var(--journey-accent) / .26);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.journey-transition__carrier::before {
+  width: 160px;
+  height: 160px;
+}
+
+.journey-transition__carrier::after {
+  width: 420px;
+  height: 420px;
+  border-color: rgba(var(--journey-accent) / .09);
+}
+
+.journey-transition.is-carrier-visible .journey-transition__carrier {
+  animation: journey-carrier-exit 1600ms cubic-bezier(.18, .72, .2, 1) forwards;
+}
+
+.journey-transition[data-state="arriving"] .journey-transition__copy {
+  display: none;
+}
+
+.journey-transition[data-state="arriving"] .journey-transition__carrier {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(42);
+}
+
+.journey-transition[data-state="arriving"].is-revealing {
+  opacity: 0;
+}
+
+.journey-transition[data-state="arriving"].is-revealing .journey-transition__carrier {
+  animation: journey-carrier-arrival 1500ms cubic-bezier(.22, .75, .18, 1) forwards;
+}
+
+.journey-transition[data-kind="branch"] .journey-transition__carrier {
+  border-radius: 48% 52% 44% 56%;
+}
+
+@keyframes journey-carrier-exit {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.15); }
+  20% { opacity: 1; }
+  58% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(64); }
+}
+
+@keyframes journey-carrier-arrival {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(42); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(72); }
+}
+
+body.is-journey-leaving {
+  overflow: hidden;
+}

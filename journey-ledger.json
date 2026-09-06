@@ -1,0 +1,27 @@
+{
+  "version": "full-journey-0.1.0-rc.1",
+  "seams": [
+    {
+      "id": "green-body-to-planet-neuron",
+      "from": "index.html#worldOne",
+      "to": "planet-neuron/index.html",
+      "trigger": "#worldNext",
+      "carrier": ".journey-transition__carrier",
+      "axis": "z",
+      "exitDirection": 1,
+      "entryDirection": 1,
+      "technique": "single-carrier zoom-through"
+    },
+    {
+      "id": "planet-neuron-to-eye-multiverse",
+      "from": "planet-neuron/index.html",
+      "to": "eye-multiverse.html",
+      "trigger": "[data-next-world]",
+      "carrier": ".journey-transition__carrier",
+      "axis": "z",
+      "exitDirection": 1,
+      "entryDirection": 1,
+      "technique": "single-carrier zoom-through"
+    }
+  ]
+}

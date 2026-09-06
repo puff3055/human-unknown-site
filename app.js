@@ -31,6 +31,8 @@
   const soundscape = window.LivingSoundscape && soundToggle
     ? new window.LivingSoundscape(soundToggle)
     : null;
+  window.__humanUnknownSound = soundscape;
+  window.dispatchEvent(new CustomEvent('humanunknown:soundready'));
   const lightCursor = window.HumanUnknownLightCursor && contactCursor
     ? new window.HumanUnknownLightCursor(contactCursor, { reducedMotion: reduceMotion })
     : null;
@@ -371,6 +373,7 @@
 
   function applyEncounterState(nextState, now) {
     const previousPhase = phase;
+    const previousNoticeSerial = encounterState.noticeSerial;
     encounterState = nextState;
     phase = nextState.phase;
 
@@ -409,7 +412,12 @@
       : phase === 'aligned'
         ? interaction.coreAmount * (0.34 + nextState.hold * 0.66)
         : interaction.coreAmount * 0.16;
-    const hotzoneCue = isTrackingPhase(phase)
+    const finalPromptFadeStartedAt = nextState.guideReadableAt === null
+      ? Number.POSITIVE_INFINITY
+      : nextState.guideReadableAt - encounterTiming.guideEnterMs;
+    const hotzoneNarrativelyReady = phase === 'aligned'
+      || (phase === 'noticed' && now >= finalPromptFadeStartedAt);
+    const hotzoneCue = hotzoneNarrativelyReady
       ? clamp(
         0.36
           + presence.proximity * 0.36
@@ -475,8 +483,6 @@
         setLifeState('observing');
       } else if (phase === 'noticed') {
         setLifeState('orienting');
-        addCuriosityImpulse(1.12, 'mutual-notice', now);
-        startPupilReaction(now, 1);
       } else if (phase === 'aligned') {
         setLifeState('approaching');
       } else if (phase === 'entering') {
@@ -492,6 +498,11 @@
           noticeSerial: nextState.noticeSerial,
         },
       }));
+    }
+
+    if (nextState.noticeSerial > previousNoticeSerial) {
+      addCuriosityImpulse(1.12, 'mutual-notice', now);
+      startPupilReaction(now, 1);
     }
 
     if (nextState.handoff && !exitEventDispatched) {
@@ -1621,7 +1632,7 @@
       firstContactAt,
       sound: soundscape ? soundscape.getState() : null,
       contract: {
-        version: '4.5',
+        version: '4.7-sound-1',
         phaseAttribute: 'data-phase',
         introAttribute: 'data-intro',
         countdownAttribute: 'data-countdown',
